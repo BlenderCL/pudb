@@ -37,6 +37,8 @@ from types import TracebackType
 from pudb.lowlevel import decode_lines, ui_log
 from pudb.settings import load_config, save_config, get_save_config_path
 
+WINDOWS = (sys.platform == "win32")
+
 CONFIG = load_config()
 save_config(CONFIG)
 
@@ -585,12 +587,18 @@ except ImportError:
     curses = None
 
 
-from urwid.raw_display import Screen as RawScreen
-try:
-    from urwid.curses_display import Screen as CursesScreen
-except ImportError:
-    CursesScreen = None
-
+prefer_curses_display = (
+        CONFIG["display"] == "curses" or (
+            CONFIG["display"] == "auto" and
+                not os.environ.get("TERM", "").startswith("xterm")))
+# select display driver
+if WINDOWS:
+    from urwid.colorama_display import Screen
+elif prefer_curses_display:
+    from urwid.curses_display import Screen
+else:
+    from urwid.raw_display import Screen
+del prefer_curses_display
 
 class ThreadsafeScreenMixin:
     """A Screen subclass that doesn't crash when running from a non-main thread."""
@@ -610,11 +618,11 @@ class ThreadsafeScreenMixin:
             pass
 
 
-class ThreadsafeRawScreen(ThreadsafeScreenMixin, RawScreen):
+class ThreadsafeRawScreen(ThreadsafeScreenMixin, Screen):
     pass
 
 
-class ThreadsafeFixedSizeRawScreen(ThreadsafeScreenMixin, RawScreen):
+class ThreadsafeFixedSizeRawScreen(ThreadsafeScreenMixin, Screen):
     def __init__(self, **kwargs):
         self._term_size = kwargs.pop("term_size", None)
         super().__init__(**kwargs)
@@ -627,7 +635,7 @@ class ThreadsafeFixedSizeRawScreen(ThreadsafeScreenMixin, RawScreen):
 
 
 if curses is not None:
-    class ThreadsafeCursesScreen(ThreadsafeScreenMixin, RawScreen):
+    class ThreadsafeCursesScreen(ThreadsafeScreenMixin, Screen):
         pass
 
 # }}}
@@ -1544,6 +1552,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     return False
                 if mod.__file__ is None:
                     return False
+                if mod.__file__ is None:
+                    return False
                 filename = mod.__file__
 
                 base, ext = splitext(filename)
@@ -2133,7 +2143,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         if (want_curses_display
                 and not (stdin is not None or stdout is not None)
-                and CursesScreen is not None):
+                and curses is not None):
             self.screen = ThreadsafeCursesScreen()
         else:
             screen_kwargs = {}
@@ -2151,6 +2161,16 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         del want_curses_display
 
+        import sys
+        from bdb import BdbQuit
+        from urwid.main_loop import ExitMainLoop
+        def q_except_hook(exctype, value, traceback):
+            if exctype == BdbQuit:
+                self.screen.stop()
+            else:
+                sys.__excepthook__(exctype, value, traceback)
+        sys.excepthook = q_except_hook
+
         if curses:
             try:
                 curses.setupterm()
@@ -2162,7 +2182,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             else:
                 color_support = curses.tigetnum("colors")
 
-                if color_support == 256 and isinstance(self.screen, RawScreen):
+                if color_support == 256 and hasattr(self.screen, 'set_terminal_properties'):
                     self.screen.set_terminal_properties(256)
 
         self.setup_palette(self.screen)

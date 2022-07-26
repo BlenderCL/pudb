@@ -38,8 +38,26 @@ xdg_data_home = os.environ.get("XDG_DATA_HOME",
             os.path.join(_home, ".local", "share") if _home else None)
 
 
-XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME",
-                                 os.path.join(_home, ".config") if _home else None)
+CONF_SECTION = "pudb"
+CONF_FILE_NAME = "pudb.cfg"
+  
+# If we gonna use pudb inside blender, it's better to keep
+# pudb config file in the same folder of the pudb library...
+LOCALLY_CONFIG = os.path.isfile(os.path.join(os.path.dirname(__file__),
+                                            CONF_FILE_NAME))
+
+if LOCALLY_CONFIG:
+    XDG_CONF_RESOURCE = ""
+    XDG_CONFIG_HOME = os.path.dirname(__file__)
+    SAVED_BREAKPOINTS_FILE_NAME = 'saved-breakpoints'
+    BREAKPOINTS_FILE_NAME = 'breakpoints'
+else:
+    XDG_CONF_RESOURCE = "pudb"
+    XDG_CONFIG_HOME = os.environ.get('XDG_CONFIG_HOME',
+                                    os.path.join(_home, '.config')
+                                    if _home else None)
+    SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
+    BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
 if XDG_CONFIG_HOME:
     XDG_CONFIG_DIRS = [XDG_CONFIG_HOME]
@@ -65,12 +83,12 @@ def get_save_config_path(*resource):
 # end LGPL violation
 
 
-CONF_SECTION = "pudb"
-XDG_CONF_RESOURCE = "pudb"
-CONF_FILE_NAME = "pudb.cfg"
-
-SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
-BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
+# CONF_SECTION = "pudb"
+# XDG_CONF_RESOURCE = "pudb"
+# CONF_FILE_NAME = "pudb.cfg"
+# 
+# SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
+# BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
 
 _config_ = [None]
@@ -117,7 +135,7 @@ def load_config():
     conf_dict.setdefault("wrap_variables", "True")
     conf_dict.setdefault("default_variables_access_level", "public")
 
-    conf_dict.setdefault("display", "auto")
+    conf_dict.setdefault("display", "curses") #auto
 
     conf_dict.setdefault("prompt_on_quit", "True")
 
@@ -192,6 +210,9 @@ def edit_config(ui, conf_dict):
     def _update_stringifier():
         import pudb.var_view
         pudb.var_view.custom_stringifier_dict = {}
+        ui.update_var_view()
+
+    def _update_default_variables_access_level():
         ui.update_var_view()
 
     def _update_default_variables_access_level():
@@ -407,6 +428,26 @@ def edit_config(ui, conf_dict):
 
     # }}}
 
+    # {{{ variables access level
+
+    default_variables_access_level_opts = ["public", "private", "all"]
+    default_variables_access_level_rb_group = []
+    default_variables_access_level_info = urwid.Text(
+            "Set the default attribute visibility "
+            "of variables in the variables list.\n"
+            "\nNote that you can change this option on "
+            "a per-variable basis by selecting the "
+            "variable and pressing '*'.")
+    default_variables_access_level_rbs = [
+            urwid.RadioButton(default_variables_access_level_rb_group, name,
+                conf_dict["default_variables_access_level"] == name,
+                on_state_change=_update_config,
+                user_data=("default_variables_access_level", name))
+            for name in default_variables_access_level_opts
+            ]
+
+    # }}}
+
     # {{{ wrap variables
 
     cb_wrap_variables = urwid.CheckBox("Wrap variables",
@@ -462,6 +503,11 @@ def edit_config(ui, conf_dict):
             + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
             + [stringifier_info]
             + stringifier_rbs
+
+            + [urwid.AttrMap(urwid.Text("\nVariables Attribute Visibility:\n"),
+                "group head")]
+            + [default_variables_access_level_info]
+            + default_variables_access_level_rbs
 
             + [urwid.AttrMap(urwid.Text("\nVariables Attribute Visibility:\n"),
                 "group head")]

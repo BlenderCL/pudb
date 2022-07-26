@@ -110,8 +110,14 @@ def run_classic_shell(globals, locals):
 def run_bpython_shell(globals, locals):
     ns = SetPropagatingDict([locals, globals], locals)
 
-    import bpython
-    bpython.embed(args=[], locals_=ns)
+    # import bpython
+    # bpython.embed(args=[], locals_=ns)
+    try:
+        import bpython.cli
+        bpython.cli.main(args=[], locals_=ns)
+    except:
+        import bpython.curtsies
+        bpython.curtsies.main(args=[], locals_=ns)
 
 
 # {{{ ipython
