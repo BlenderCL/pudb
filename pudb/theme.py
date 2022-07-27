@@ -542,7 +542,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
 
     elif theme == "weed":
-        palette_dict.update({ # {{{ ui
+        palette_dict = { # {{{ ui
 
             "header": (add_setting("white", "bold"), "brown", "standout"),
 
@@ -676,13 +676,13 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
             # }}}
 
-        })
+        }
 
 
         # }}}
 
     elif theme == "weed win":
-        palette_dict.update({ # {{{ ui
+        palette_dict = { # {{{ ui
 
             "header": (add_setting("yellow", "bold"), "dark green", "standout"),
 
@@ -816,7 +816,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
             # }}}
 
-        })
+        }
 
 
         # }}}
