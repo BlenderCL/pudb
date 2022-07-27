@@ -38,7 +38,7 @@ THEMES = [
     "monokai-256",
     "mono",
     "weed", 
-    "weed win"]
+    "weed win",
 ]
 
 
