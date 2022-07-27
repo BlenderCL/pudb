@@ -722,19 +722,32 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "current highlighted source": ("light magenta", "dark magenta"),
 
             # {{{ highlighting
+            # {{{ Code syntax
+            "literal":   ("light magenta", "black"),
+            "builtin":   ("light cyan", "black"),
+            "exception": ("light cyan", "black"),
+            "keyword2":  ("light cyan", "black"),
+            "function":  ("light green", "black"),
+            "class":     (add_setting("light green", "underline"), "black"),
+            "keyword":   ("light red", "black"),
+            "operator":  ("light red", "black"),
+            "comment":   ("dark gray", "black"),
+            "docstring": ("dark gray", "black"),
+            "argument":  ("brown", "black"),
+            "pseudo":    ("brown", "black"),
+            "string":    ("yellow", "black"),
+            # }}}
 
-            "line number": (add_setting("dark gray", "bold"), "black"),
-            "keyword": ("light cyan", "black"),
-            "name": (add_setting("light red", "bold"), "black"),
-            "literal": (add_setting("light magenta", "bold"), "black"),
+            # "line number": (add_setting("dark gray", "bold"), "black"),
+            # "name": (add_setting("light red", "bold"), "black"),
 
-            "string": (add_setting("brown", "bold"), "black"),
-            "doublestring": (add_setting("brown", "bold"), "black"),
-            "singlestring": (add_setting("brown", "bold"), "black"),
-            "docstring": ("yellow", "black"),
+            # "string": (add_setting("brown", "bold"), "black"),
+            # "doublestring": (add_setting("brown", "bold"), "black"),
+            # "singlestring": (add_setting("brown", "bold"), "black"),
+            # "docstring": ("yellow", "black"),
 
-            "punctuation": (add_setting("white", "bold"), "black"),
-            "comment": ("dark gray", "black"),
+            # "punctuation": (add_setting("white", "bold"), "black"),
+            # "comment": ("dark gray", "black"),
 
             # }}}
 
